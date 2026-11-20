@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O'yna yodla – ingliz so'zlarini o'ynab yodlang</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 24px 16px 64px; }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .brand { font-size: 28px; font-weight: 900; }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill { background: #1e293b; border: 1px solid #334155; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+    .nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .nav button, .btn { border: none; border-radius: 14px; padding: 10px 16px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .nav button { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .nav button.active { background: #f59e0b; color: #0f172a; border-color: #f59e0b; }
+    .btn-primary { background: #f59e0b; color: #0f172a; }
+    .btn-success { background: #10b981; color: #06281e; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-ghost { background: #1e293b; color: #f8fafc; border: 1px solid #334155; }
+    .cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .chip { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+    .chip.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .card-box { background: #1e293b; border: 1px solid #334155; border-radius: 24px; padding: 32px 20px; text-align: center; min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+    .emoji-big { font-size: 56px; }
+    .word-big { font-size: 38px; font-weight: 900; }
+    .muted { color: #94a3b8; font-size: 14px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 16px; }
+    .panel { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 18px; }
+    .opt-btn { width: 100%; text-align: left; padding: 14px 16px; border-radius: 14px; background: #0f172a; color: #f8fafc; border: 1px solid #334155; font-weight: 700; cursor: pointer; }
+    .opt-btn.ok { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #6ee7b7; }
+    .opt-btn.bad { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #fca5a5; }
+    .tile { min-height: 105px; border-radius: 16px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-weight: 800; cursor: pointer; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+    .tile.open { background: #f59e0b; color: #0f172a; border-color: #f59e0b; }
+    .tile.matched { background: rgba(16, 185, 129, 0.25); border-color: #10b981; color: #6ee7b7; }
+    .tile.wrong { background: rgba(239, 68, 68, 0.25); border-color: #ef4444; color: #fca5a5; }
+    input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; }
+    .bars { display: flex; gap: 4px; margin-top: 10px; }
+    .bar { height: 6px; flex: 1; border-radius: 999px; background: #334155; }
+    .bar.on { background: #f59e0b; }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="brand">O'yna yodla</div>
+        <div class="muted" id="wotd"></div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="nav">
+      <button id="tab-home" onclick="setTab('home')">Bosh sahifa</button>
+      <button id="tab-cards" onclick="setTab('cards')">Kartochkalar</button>
+      <button id="tab-quiz" onclick="setTab('quiz')">Viktorina</button>
+      <button id="tab-match" onclick="setTab('match')">Juftliklar</button>
+      <button id="tab-dict" onclick="setTab('dict')">Lug'at</button>
+    </div>
+
+    <div id="app"></div>
+  </div>
+
+  <script>
+    // --- learning.ts mantigi ---
+    const INTERVALS = [0, 1, 2, 4, 7, 14];
+    const MAX_BOX = INTERVALS.length - 1;
+    const LEARNED_BOX = 3;
+    const XP_PER_LEVEL = 100;
+
+    function dayKey(date = new Date()) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDays(date, days) {
+      const next = new Date(date);
+      next.setDate(next.getDate() + days);
+      return next;
+    }
+
+    function review(prev, knew, today = new Date()) {
+      const box = knew ? Math.min((prev?.box ?? 0) + 1, MAX_BOX) : 0;
+      return {
+        box,
+        due: dayKey(addDays(today, INTERVALS[box] ?? 0)),
+        seen: (prev?.seen ?? 0) + 1,
+      };
+    }
+
+    function isDue(state, today = new Date()) {
+      return !state || state.due <= dayKey(today);
+    }
+
+    function xpForAnswer(correct, combo) {
+      return correct ? 10 + Math.min(combo, 5) * 2 : 0;
+    }
+
+    function levelInfo(xp) {
+      return {
+        level: Math.floor(xp / XP_PER_LEVEL) + 1,
+        current: xp % XP_PER_LEVEL,
+        needed: XP_PER_LEVEL,
+      };
+    }
+
+    function streak(days, today = new Date()) {
+      const set = new Set(days);
+      let cursor = set.has(dayKey(today)) ? today : addDays(today, -1);
+      let count = 0;
+      while (set.has(dayKey(cursor))) {
+        count++;
+        cursor = addDays(cursor, -1);
+      }
+      return count;
+    }
+
+    function shuffle(items) {
+      const out = [...items];
+      for (let i = out.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      return out;
+    }
+
+    // --- words.ts bazasi ---
+    const CATEGORIES = [
+      { id: "kundalik", label: "Kundalik hayot", emoji: "🏡" },
+      { id: "ovqat", label: "Ovqat va ichimlik", emoji: "🍎" },
+      { id: "sayohat", label: "Sayyohat", emoji: "✈️" },
+      { id: "ish", label: "Ish va o'qish", emoji: "💼" },
+      { id: "tabiat", label: "Tabiat va hayvonlar", emoji: "🌿" },
+      { id: "hissiyot", label: "Hissiyotlar", emoji: "💛" },
+      { id: "mening", label: "Mening so'zlarim", emoji: "✍️" },
+    ];
+
+    const RAW = {
+      kundalik: [
+        ["house", "uy", "🏡", "Our house has a big garden."],
+        ["family", "oila", "👨‍👩‍👧‍👦", "I love my family very much."],
+        ["friend", "do'st", "🤝", "She is my best friend."],
+        ["morning", "ertalab", "🌅", "I drink tea every morning."],
+        ["evening", "kechqurun", "🌆", "We walk in the park in the evening."],
+        ["key", "kalit", "🔑", "I can't find my key."],
+        ["window", "deraza", "🪟", "Please open the window."],
+        ["door", "eshik", "🚪", "Close the door, please."],
+        ["bed", "karavot", "🛏️", "The bed is very soft."],
+        ["clock", "soat", "⏰", "The clock on the wall is slow."],
+        ["phone", "telefon", "📱", "My phone is on the table."],
+        ["neighbor", "qo'shni", "🏘️", "Our neighbor is very kind."],
+        ["clean", "toza", "🧼", "Keep your room clean."],
+        ["shopping", "xarid qilish", "🛍️", "We go shopping on Sunday."],
+        ["weekend", "dam olish kunlari", "🗓️", "What are you doing this weekend?"],
+      ],
+      ovqat: [
+        ["apple", "olma", "🍎", "An apple a day keeps the doctor away."],
+        ["bread", "non", "🍞", "Fresh bread smells wonderful."],
+        ["water", "suv", "💧", "Drink more water every day."],
+        ["tea", "choy", "🍵", "Would you like some green tea?"],
+        ["meat", "go'sht", "🥩", "Plov is made with rice and meat."],
+        ["rice", "guruch", "🍚", "We need two kilos of rice."],
+        ["onion", "piyoz", "🧅", "Cut the onion into small pieces."],
+        ["carrot", "sabzi", "🥕", "Yellow carrots are best for plov."],
+        ["cheese", "pishloq", "🧀", "I like bread with cheese."],
+        ["sugar", "shakar", "🍬", "No sugar in my coffee, please."],
+        ["salt", "tuz", "🧂", "Add a little salt to the soup."],
+        ["breakfast", "nonushta", "🥐", "Breakfast is ready!"],
+        ["dinner", "kechki ovqat", "🍽️", "We have dinner at seven."],
+        ["delicious", "mazali", "😋", "This samsa is delicious."],
+        ["hungry", "och", "🤤", "I'm so hungry after school."],
+      ],
+      sayohat: [
+        ["airport", "aeroport", "✈️", "The airport is far from the city."],
+        ["ticket", "chipta", "🎟️", "I bought a train ticket to Samarkand."],
+        ["passport", "pasport", "🛂", "Don't forget your passport."],
+        ["luggage", "yuk", "🧳", "My luggage is too heavy."],
+        ["hotel", "mehmonxona", "🏨", "Our hotel is near the beach."],
+        ["map", "xarita", "🗺️", "Let's look at the map."],
+        ["journey", "safar", "🧭", "Have a nice journey!"],
+        ["beach", "plyaj", "🏖️", "Children are playing on the beach."],
+        ["mountain", "tog'", "🏔️", "We climbed the mountain together."],
+        ["city", "shahar", "🏙️", "Tashkent is a big city."],
+        ["street", "ko'cha", "🛣️", "The shop is on this street."],
+        ["arrive", "yetib kelmoq", "📍", "We arrive at noon."],
+        ["leave", "ketmoq", "🚶", "The bus leaves at eight."],
+        ["abroad", "chet elda", "🌍", "She wants to study abroad."],
+        ["souvenir", "esdalik sovg'a", "🎁", "I bought a souvenir for my mom."],
+      ],
+      ish: [
+        ["job", "ish", "💼", "He found a new job."],
+        ["meeting", "yig'ilish", "📅", "The meeting starts at ten."],
+        ["salary", "maosh", "💰", "Her salary is good."],
+        ["boss", "boshliq", "🧑‍💼", "My boss is very busy today."],
+        ["colleague", "hamkasb", "👥", "My colleague helped me a lot."],
+        ["deadline", "muddat", "⏳", "The deadline is tomorrow."],
+        ["skill", "ko'nikma", "🛠️", "Speaking English is a useful skill."],
+        ["teacher", "o'qituvchi", "👩‍🏫", "Our teacher explains everything clearly."],
+        ["student", "talaba", "🎓", "He is a university student."],
+        ["lesson", "dars", "📖", "Today's lesson was interesting."],
+        ["homework", "uy vazifasi", "📝", "Did you finish your homework?"],
+        ["exam", "imtihon", "🧪", "I passed the exam!"],
+        ["knowledge", "bilim", "🧠", "Knowledge is power."],
+        ["success", "muvaffaqiyat", "🏆", "Hard work leads to success."],
+        ["effort", "harakat", "💪", "Every effort counts."],
+      ],
+      tabiat: [
+        ["tree", "daraxt", "🌳", "There is an old tree in our yard."],
+        ["flower", "gul", "🌸", "These flowers smell sweet."],
+        ["river", "daryo", "🏞️", "The river is wide and deep."],
+        ["sky", "osmon", "🌌", "The sky is clear tonight."],
+        ["rain", "yomg'ir", "🌧️", "Take an umbrella, it may rain."],
+        ["snow", "qor", "❄️", "Kids love playing in the snow."],
+        ["sun", "quyosh", "☀️", "The sun is shining brightly."],
+        ["moon", "oy", "🌕", "The moon is full tonight."],
+        ["star", "yulduz", "⭐", "Look at that bright star!"],
+        ["horse", "ot", "🐎", "The horse runs very fast."],
+        ["bird", "qush", "🐦", "A bird is singing outside."],
+        ["dog", "it", "🐕", "Our dog loves to play."],
+        ["cat", "mushuk", "🐈", "The cat is sleeping on the sofa."],
+        ["sheep", "qo'y", "🐑", "There are many sheep on the hill."],
+        ["forest", "o'rmon", "🌲", "We walked through the forest."],
+      ],
+      hissiyot: [
+        ["happy", "baxtli", "😊", "I'm happy to see you."],
+        ["sad", "xafa", "😟", "Why are you sad today?"],
+        ["angry", "jahli chiqqan", "😡", "Don't be angry with me."],
+        ["tired", "charchagan", "😴", "I'm tired after work."],
+        ["afraid", "qo'rqqan", "😨", "She is afraid of dogs."],
+        ["proud", "faxrlangan", "🦁", "My parents are proud of me."],
+        ["brave", "jasur", "🛡️", "He was very brave."],
+        ["calm", "xotirjam", "🕯️", "Stay calm and breathe."],
+        ["excited", "hayajonlangan", "🤩", "We're excited about the trip!"],
+        ["lonely", "yolg'iz", "🥀", "He felt lonely in a new city."],
+        ["grateful", "minnatdor", "🙏", "I'm grateful for your help."],
+        ["surprised", "hayron", "😲", "I was surprised by the news."],
+        ["kind", "mehribon", "💛", "Be kind to everyone."],
+        ["shy", "uyatchan", "🙈", "The little boy is shy."],
+        ["hope", "umid", "🌈", "Never lose hope."],
+      ],
+    };
+
+    const BASE_WORDS = Object.keys(RAW).flatMap((cat) =>
+      RAW[cat].map(([en, uz, emoji, ex]) => ({ id: en, en, uz, emoji, ex, cat })),
+    );
+
+    function wordOfTheDay(words, key = dayKey()) {
+      if (!words.length) return null;
+      let h = 0;
+      for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      return words[h % words.length];
+    }
+
+    function speak(text) {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      window.speechSynthesis.speak(u);
+    }
+
+    // --- Holat (localStorage) ---
+    const STORE_KEY = " oynayodla_v1_state;";
+    const defaultState = {
+      xp: 0,
+      cards: {},
+      days: [],
+      customWords: [],
+      quizBest: 0,
+      matchBest: null,
+    };
+
+    function loadState() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+        return { ...defaultState, ...raw, cards: raw.cards || {}, days: raw.days || [], customWords: raw.customWords || [] };
+      } catch {
+        return { ...defaultState };
+      }
+    }
+
+    let state = loadState();
+    function saveState() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      renderTop();
+    }
+
+    function getAllWords() {
+      return [...BASE_WORDS, ...state.customWords];
+    }
+
+    function addXp(amount) {
+      const today = dayKey();
+      if (!state.days.includes(today)) state.days.push(today);
+      state.xp += amount;
+      saveState();
+    }
+
+    function reviewWord(wordId, knew) {
+      state.cards[wordId] = review(state.cards[wordId], knew);
+      saveState();
+    }
+
+    function renderTop() {
+      const words = getAllWords();
+      const info = levelInfo(state.xp);
+      const learned = words.filter((w) => (state.cards[w.id]?.box ?? 0) >= LEARNED_BOX).length;
+      const st = streak(state.days);
+      const wotd = wordOfTheDay(words);
+
+      document.getElementById("wotd").textContent = wotd
+        ? `Kun so'zi: ${wotd.emoji} ${wotd.en} — ${wotd.uz}`
+        : "";
+
+      document.getElementById("stats").innerHTML = `
+        <span class="pill">⭐ Daraja ${info.level} (${info.current}/${info.needed} XP)</span>
+        <span class="pill">🏆 ${state.xp} XP</span>
+        <span class="pill">🔥 ${st} kun</span>
+        <span class="pill">📚 ${learned}/${words.length} yodlangan</span>
+      `;
+    }
+
+    // --- Sahifalar ---
+    let activeTab = "home";
+    function setTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll(".nav button").forEach((b) => b.classList.remove("active"));
+      document.getElementById(`tab-${tab}`)?.classList.add("active");
+      renderApp();
+    }
+
+    function renderApp() {
+      if (activeTab === "home") renderHome();
+      if (activeTab === "cards") renderCards();
+      if (activeTab === "quiz") renderQuizStart();
+      if (activeTab === "match") initMatch();
+      if (activeTab === "dict") renderDict();
+    }
+
+    function renderHome() {
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <h1 style="font-size:32px;font-weight:900;">Ingliz so'zlarini o'ynab yodlang</h1>
+          <p class="muted mt-12">Leytner takrorlash tizimi, vaqtga qarshi viktorina, juftlik o'yini va shaxsiy lug'at.</p>
+          <div class="grid-3 mt-16">
+            <div class="panel">
+              <h3>🃏 Kartochkalar</h3>
+              <p class="muted mt-12">Kartani aylantiring, bilganingizni belgilang, bilmaganingiz qaytadi.</p>
+              <button class="btn btn-primary mt-12" onclick="setTab('cards')">Boshlash</button>
+            </div>
+            <div class="panel">
+              <h3>⚡ Viktorina</h3>
+              <p class="muted mt-12">10 ta savol, 12 soniya vaqt, 3 ta jon hamda ketma-ketlik bonusi.</p>
+              <button class="btn btn-primary mt-12" onclick="setTab('quiz')">O'ynash</button>
+            </div>
+            <div class="panel">
+              <h3>🧩 Juftliklar</h3>
+              <p class="muted mt-12">6 juft inglizcha-o'zbekcha so'zni eng kam urinishda toping.</p>
+              <button class="btn btn-primary mt-12" onclick="setTab('match')">Juftlash</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 1. Kartochkalar ---
+    let cardCat = "";
+    let deck = [];
+    let cardIdx = 0;
+    let cardFlipped = false;
+    let cardKnown = 0;
+
+    function buildDeck() {
+      const pool = getAllWords().filter((w) => !cardCat || w.cat === cardCat);
+      const due = pool.filter((w) => isDue(state.cards[w.id]));
+      const src = due.length ? due : pool;
+      deck = shuffle(src).slice(0, 10);
+      cardIdx = 0;
+      cardFlipped = false;
+      cardKnown = 0;
+      renderCards();
+    }
+
+    function answerCard(knew) {
+      const cur = deck[cardIdx];
+      if (!cur) return;
+      reviewWord(cur.id, knew);
+      addXp(knew ? 5 : 1);
+      if (knew) cardKnown++;
+      cardIdx++;
+      cardFlipped = false;
+      renderCards();
+    }
+
+    function renderCards() {
+      if (!deck.length || cardIdx > deck.length) buildDeck();
+      const chips = `<button class="chip ${!cardCat ? "active" : ""}" onclick="cardCat='';buildDeck()">Barchasi</button>` +
+        CATEGORIES.map((c) => `<button class="chip ${cardCat === c.id ? "active" : ""}" onclick="cardCat='${c.id}';buildDeck()">${c.emoji} ${c.label}</button>`).join("");
+
+      if (!deck.length) {
+        document.getElementById("app").innerHTML = `<div class="cats">${chips}</div><div class="panel"><p>Bu mavzuda hali so'z yo'q.</p></div>`;
+        return;
+      }
+
+      if (cardIdx >= deck.length) {
+        document.getElementById("app").innerHTML = `
+          <div class="cats">${chips}</div>
+          <div class="panel" style="text-align:center;">
+            <div class="emoji-big">🎉</div>
+            <h2 class="mt-12">Barakalla!</h2>
+            <p class="muted mt-12">${deck.length} ta so'zdan <b>${cardKnown}</b> tasini bildingiz.</p>
+            <button class="btn btn-primary mt-16" onclick="buildDeck()">Yana 10 ta</button>
+          </div>
+        `;
+        return;
+      }
+
+      const cur = deck[cardIdx];
+      document.getElementById("app").innerHTML = `
+        <div class="cats">${chips}</div>
+        <div class="row-between muted">
+          <span>${cardIdx + 1} / ${deck.length}</span>
+          <span>✅ ${cardKnown}</span>
+        </div>
+        <div class="card-box mt-12" onclick="cardFlipped=!cardFlipped;renderCards()">
+          <div class="emoji-big">${cur.emoji}</div>
+          ${!cardFlipped
+            ? `<div class="word-big">${cur.en}</div>
+               <div class="muted">Tarjimani ko'rish uchun bosing</div>
+               <button class="btn btn-ghost mt-12" onclick="event.stopPropagation();speak('${cur.en.replace(/'/g, "\\'")}')">🔊 Eshitish</button>`
+            : `<div class="word-big" style="color:#fbbf24">${cur.uz}</div>
+               <div class="muted" style="font-style:italic">${cur.ex || ""}</div>`
+          }
+        </div>
+        <div class="actions">
+          <button class="btn btn-danger" onclick="answerCard(false)">↩ Yana (+1 XP)</button>
+          <button class="btn btn-success" onclick="answerCard(true)">✓ Bilaman (+5 XP)</button>
+        </div>
+      `;
+    }
+
+    // --- 2. Viktorina ---
+    let quizDir = "en-uz";
+    let quizCat = "";
+    let qList = [];
+    let qIdx = 0;
+    let qLives = 3;
+    let qCombo = 0;
+    let qScore = 0;
+    let qCorrect = 0;
+    let qPicked = null;
+
+    function renderQuizStart() {
+      const chips = `<button class="chip ${!quizCat ? "active" : ""}" onclick="quizCat='';renderQuizStart()">Barchasi</button>` +
+        CATEGORIES.map((c) => `<button class="chip ${quizCat === c.id ? "active" : ""}" onclick="quizCat='${c.id}';renderQuizStart()">${c.emoji} ${c.label}</button>`).join("");
+
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <h2>Viktorina</h2>
+          <p class="muted mt-12">10 ta savol, 3 ta jon. Ketma-ket to'g'ri javoblar ko'proq XP beradi!</p>
+          <div class="grid-2 mt-16">
+            <button class="opt-btn ${quizDir === "en-uz" ? "ok" : ""}" onclick="quizDir='en-uz';renderQuizStart()">🇬🇧 → UZ (Inglizchadan o'zbekchaga)</button>
+            <button class="opt-btn ${quizDir === "uz-en" ? "ok" : ""}" onclick="quizDir='uz-en';renderQuizStart()">UZ → 🇬🇧 (O'zbekchadan inglizchaga)</button>
+          </div>
+          <div class="cats mt-16">${chips}</div>
+          <div class="row-between mt-16">
+            <span class="pill">🏆 Rekord: ${state.quizBest} XP</span>
+            <button class="btn btn-primary" onclick="startQuiz()">▶ O'yinni boshlash</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function startQuiz() {
+      const all = getAllWords();
+      const pool = all.filter((w) => !quizCat || w.cat === quizCat);
+      const src = pool.length >= 4 ? pool : all;
+      qList = shuffle(src).slice(0, 10).map((word) => {
+        const others = shuffle(all.filter((w) => w.id !== word.id && w.uz !== word.uz)).slice(0, 3);
+        return { word, options: shuffle([word, ...others]) };
+      });
+      qIdx = 0;
+      qLives = 3;
+      qCombo = 0;
+      qScore = 0;
+      qCorrect = 0;
+      qPicked = null;
+      renderQuizPlay();
+    }
+
+    function chooseQuiz(optId) {
+      if (qPicked) return;
+      qPicked = optId;
+      const q = qList[qIdx];
+      const ok = optId === q.word.id;
+      if (ok) {
+        const xp = xpForAnswer(true, qCombo);
+        qScore += xp;
+        qCorrect++;
+        qCombo++;
+        addXp(xp);
+      } else {
+        qCombo = 0;
+        qLives--;
+      }
+      renderQuizPlay();
+      setTimeout(() => {
+        qPicked = null;
+        if (qLives <= 0 || qIdx + 1 >= qList.length) {
+          if (qScore > state.quizBest) {
+            state.quizBest = qScore;
+            saveState();
+          }
+          renderQuizDone();
+        } else {
+          qIdx++;
+          renderQuizPlay();
+        }
+      }, 900);
+    }
+
+    function renderQuizPlay() {
+      const q = qList[qIdx];
+      const prompt = quizDir === "en-uz" ? q.word.en : q.word.uz;
+      document.getElementById("app").innerHTML = `
+        <div class="row-between">
+          <div class="pill">❤️ ${"❤️".repeat(Math.max(0, qLives))}</div>
+          <div class="stats">
+            ${qCombo >= 2 ? `<span class="pill">🔥 x${qCombo}</span>` : ""}
+            <span class="pill">${qScore} XP</span>
+          </div>
+        </div>
+        <div class="panel mt-12" style="text-align:center;">
+          <div class="muted">${qIdx + 1} / ${qList.length} savol</div>
+          <div class="emoji-big mt-12">${q.word.emoji}</div>
+          <div class="word-big mt-12">${prompt}</div>
+          ${quizDir === "en-uz" ? `<button class="btn btn-ghost mt-12" onclick="speak('${q.word.en.replace(/'/g, "\\'")}')">🔊 Eshitish</button>` : ""}
+        </div>
+        <div class="grid-2 mt-16">
+          ${q.options.map((o, i) => {
+            const label = quizDir === "en-uz" ? o.uz : o.en;
+            let cls = "opt-btn";
+            if (qPicked) {
+              if (o.id === q.word.id) cls += " ok";
+              else if (o.id === qPicked) cls += " bad";
+            }
+            return `<button class="${cls}" ${qPicked ? "disabled" : ""} onclick="chooseQuiz('${o.id.replace(/'/g, "\\'")}')"><b>${"ABCD"[i]}.</b> ${label}</button>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderQuizDone() {
+      document.getElementById("app").innerHTML = `
+        <div class="panel" style="text-align:center;">
+          <div class="emoji-big">${qLives > 0 ? "🏆" : "💪"}</div>
+          <h2 class="mt-12">${qLives > 0 ? "Ajoyib natija!" : "Yaxshi urinish!"}</h2>
+          <p class="muted mt-12">${qList.length} tadan <b>${qCorrect}</b> ta to'g'ri · <b>${qScore}</b> XP</p>
+          <div class="mt-16" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="startQuiz()">Qayta o'ynash</button>
+            <button class="btn btn-ghost" onclick="renderQuizStart()">Sozlamalar</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 3. Juftliklar ---
+    const PAIRS = 6;
+    let mTiles = [];
+    let mOpen = [];
+    let mMatched = [];
+    let mWrong = [];
+    let mMoves = 0;
+    let mLocked = false;
+
+    function initMatch() {
+      const chosen = shuffle(getAllWords()).slice(0, PAIRS);
+      mTiles = shuffle(
+        chosen.flatMap((w) => [
+          { key: `${w.id}-en`, wordId: w.id, side: "en", text: w.en, emoji: w.emoji },
+          { key: `${w.id}-uz`, wordId: w.id, side: "uz", text: w.uz, emoji: w.emoji },
+        ]),
+      );
+      mOpen = [];
+      mMatched = [];
+      mWrong = [];
+      mMoves = 0;
+      mLocked = false;
+      renderMatch();
+    }
+
+    function flipTile(key) {
+      if (mLocked || mOpen.includes(key)) return;
+      const tile = mTiles.find((t) => t.key === key);
+      if (!tile || mMatched.includes(tile.wordId)) return;
+      if (tile.side === "en") speak(tile.text);
+      mOpen.push(key);
+      renderMatch();
+
+      if (mOpen.length === 2) {
+        mMoves++;
+        mLocked = true;
+        const [a, b] = mOpen.map((k) => mTiles.find((t) => t.key === k));
+        if (a && b && a.wordId === b.wordId) {
+          setTimeout(() => {
+            mMatched.push(a.wordId);
+            mOpen = [];
+            mLocked = false;
+            addXp(5);
+            if (mMatched.length === PAIRS && (state.matchBest === null || mMoves < state.matchBest)) {
+              state.matchBest = mMoves;
+              saveState();
+            }
+            renderMatch();
+          }, 300);
+        } else {
+          mWrong = [...mOpen];
+          renderMatch();
+          setTimeout(() => {
+            mOpen = [];
+            mWrong = [];
+            mLocked = false;
+            renderMatch();
+          }, 800);
+        }
+      }
+    }
+
+    function renderMatch() {
+      const won = mMatched.length === PAIRS;
+      document.getElementById("app").innerHTML = `
+        <div class="row-between">
+          <h2>Juftliklar</h2>
+          <div class="stats">
+            <span class="pill">👆 Urinish: ${mMoves}</span>
+            <span class="pill">🏆 Eng kam: ${state.matchBest ?? "-"}</span>
+          </div>
+        </div>
+        ${won ? `
+          <div class="panel mt-12" style="text-align:center;">
+            <div class="emoji-big">🌟</div>
+            <h3 class="mt-12">Hammasi topildi!</h3>
+            <p class="muted mt-12">${mMoves} ta urinish · +${PAIRS * 5} XP</p>
+            <button class="btn btn-primary mt-12" onclick="initMatch()">Yangi o'yin</button>
+          </div>
+        ` : ""}
+        <div class="grid-4 mt-16">
+          ${mTiles.map((t) => {
+            const isMatched = mMatched.includes(t.wordId);
+            const isWrong = mWrong.includes(t.key);
+            const isOpen = mOpen.includes(t.key) || isMatched;
+            let cls = "tile";
+            if (isMatched) cls += " matched";
+            else if (isWrong) cls += " wrong";
+            else if (isOpen) cls += " open";
+            return `
+              <button class="${cls}" onclick="flipTile('${t.key.replace(/'/g, "\\'")}')">
+                ${isOpen
+                  ? `${t.side === "en" ? `<span>${t.emoji}</span>` : ""}<span>${t.text}</span><small>${t.side === "en" ? "EN" : "UZ"}</small>`
+                  : `<span style="font-size:24px;">?</span>`
+                }
+              </button>
+            `;
+          }).join("")}
+        </div>
+        ${!won ? `<div class="mt-16" style="text-align:center;"><button class="btn btn-ghost" onclick="initMatch()">Aralashtirish</button></div>` : ""}
+      `;
+    }
+
+    // --- 4. Lug'at ---
+    let dictQuery = "";
+    let dictCat = "";
+    let dictShowForm = false;
+
+    function addCustomWord(e) {
+      e.preventDefault();
+      const en = document.getElementById("w-en").value.trim();
+      const uz = document.getElementById("w-uz").value.trim();
+      const ex = document.getElementById("w-ex").value.trim();
+      const emoji = document.getElementById("w-emoji").value.trim() || "✍️";
+      if (!en || !uz) return alert("Inglizcha so'z va o'zbekcha tarjimani yozing!");
+      if (getAllWords().some((w) => w.en.toLowerCase() === en.toLowerCase())) {
+        return alert("Bu so'z lug'atda allaqachon bor!");
+      }
+      state.customWords.push({ id: `${en.toLowerCase()}-${Date.now()}`, en, uz, ex, emoji, cat: "mening" });
+      saveState();
+      dictShowForm = false;
+      dictCat = "mening";
+      renderDict();
+    }
+
+    function removeCustomWord(id) {
+      state.customWords = state.customWords.filter((w) => w.id !== id);
+      saveState();
+      renderDict();
+    }
+
+    function renderDict() {
+      const all = getAllWords();
+      const q = dictQuery.trim().toLowerCase();
+      const list = all.filter(
+        (w) => (!dictCat || w.cat === dictCat) && (!q || w.en.toLowerCase().includes(q) || w.uz.toLowerCase().includes(q)),
+      );
+
+      const chips = `<button class="chip ${!dictCat ? "active" : ""}" onclick="dictCat='';renderDict()">Barchasi</button>` +
+        CATEGORIES.map((c) => `<button class="chip ${dictCat === c.id ? "active" : ""}" onclick="dictCat='${c.id}';renderDict()">${c.emoji} ${c.label}</button>`).join("");
+
+      document.getElementById("app").innerHTML = `
+        <div class="row-between">
+          <div>
+            <h2>Lug'at (${all.length} ta so'z)</h2>
+          </div>
+          <button class="btn btn-primary" onclick="dictShowForm=!dictShowForm;renderDict()">
+            ${dictShowForm ? "Yopish" : "+ So'z qo'shish"}
+          </button>
+        </div>
+
+        ${dictShowForm ? `
+          <form class="panel mt-12 grid-2" onsubmit="addCustomWord(event)">
+            <input id="w-en" placeholder="Inglizcha (masalan: dream)" required />
+            <input id="w-uz" placeholder="Tarjima (orzu)" required />
+            <input id="w-ex" placeholder="Misol gap (ixtiyoriy)" />
+            <input id="w-emoji" placeholder="✍️" maxlength="4" />
+            <button class="btn btn-success" type="submit">Saqlash</button>
+          </form>
+        ` : ""}
+
+        <div class="mt-12">
+          <input placeholder="So'z qidirish – inglizcha yoki o'zbekcha" value="${dictQuery}" oninput="dictQuery=this.value;renderDict()" />
+        </div>
+        <div class="cats mt-12">${chips}</div>
+
+        <div class="grid-3 mt-16">
+          ${list.map((w) => {
+            const box = state.cards[w.id]?.box ?? 0;
+            return `
+              <div class="panel">
+                <div class="row-between">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:28px;">${w.emoji}</span>
+                    <div>
+                      <div style="font-weight:800;font-size:18px;">${w.en}</div>
+                      <div style="color:#fbbf24;font-weight:700;">${w.uz}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn btn-ghost" onclick="speak('${w.en.replace(/'/g, "\\'")}')">🔊</button>
+                    ${w.cat === "mening" ? `<button class="btn btn-danger" onclick="removeCustomWord('${w.id}')">🗑</button>` : ""}
+                  </div>
+                </div>
+                ${w.ex ? `<p class="muted mt-12" style="font-style:italic;">${w.ex}</p>` : ""}
+                <div class="bars">
+                  ${Array.from({ length: MAX_BOX }, (_, b) => `<div class="bar ${b < box ? "on" : ""}"></div>`).join("")}
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    renderTop();
+    setTab("home");
+  </script>
+</body>
+</html>
